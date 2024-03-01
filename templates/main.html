@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPSCInvent</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        h3 {
+            color: #666;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .button-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .button-container button {
+            margin: 0 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .button-container button:hover {
+            background-color: #0056b3;
+        }
+        .notification-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 9999;
+            transition: background-color 0.3s ease;
+        }
+        .notification-button:hover {
+            background-color: #0056b3;
+        }
+        .notification-dropdown {
+            display: none;
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px;
+            width: 500px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 9998;
+            border-radius: 5px;
+        }
+        .notification-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        .notification-item span {
+            flex: 1;
+        }
+        .notification-buttons button {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            outline: none;
+        }
+        .notification-buttons button:hover {
+            color: #007bff;
+        }
+        .notification-buttons button.tick-button:hover {
+            color: #28a745;
+        }
+        .notification-buttons button.close-button:hover {
+            color: #dc3545;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9998;
+        }
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px solid #ccc;
+            background-color: #fff;
+            z-index: 9999;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 80%;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+        }
+        input[type="text"],
+        input[type="number"],
+        input[type="submit"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        input[type="submit"] {
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        #suggestions {
+            position: absolute;
+            background-color: #f9f9f9;
+            border: 1px solid #888;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .suggestion {
+            padding: 5px;
+            cursor: pointer;
+        }
+        .suggestion:hover {
+            background-color: #ddd;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #007bff;
+            color: #fff;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .logo {
+            display: block;
+            margin: 0 auto 20px;
+            width: 150px;
+        }
+    </style>
+</head>
+
+<body>
+	<div class="container">
+		<img src="{{ url_for('static', filename='mpsclogo.png') }}" alt="MPSC Lab Logo" class="logo">
+	    <h2>Welcome, {{ username }}</h2>
+	    <div class="button-container">
+	        <button onclick="openAddPopup()">Add/Edit Item</button>
+	        <button onclick="openRemovePopup()">Remove Item</button>
+	        <button onclick="openAssignPopup()">Assign Item</button>
+	        <button onclick="openReturnPopup()">Return Item</button>
+	    </div>
+	</div>
+    <button class="notification-button" onclick="toggleDropdown()">🔔</button>
+    <!-- Dropdown window -->
+    <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notification-item">
+            <span>Notification 1</span>
+            <div class="notification-buttons">
+                <button class="tick-button" onclick="performAdditionalTask(1)">✅</button>
+                <button class="close-button" onclick="removeNotification(1)">❌</button>
+            </div>
+        </div>
+        <div class="notification-item">
+            <span>Notification 2</span>
+            <div class="notification-buttons">
+                <button class="tick-button" onclick="performAdditionalTask(2)">✅</button>
+                <button class="close-button" onclick="removeNotification(2)">❌</button>
+            </div>
+        </div>
+        <div class="notification-item">
+            <span>Notification 3</span>
+            <div class="notification-buttons">
+                <button class="tick-button" onclick="performAdditionalTask(3)">✅</button>
+                <button class="close-button" onclick="removeNotification(3)">❌</button>
+            </div>
+        </div>
+    </div>
+    <h2>Lab Inventory</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Item Name</th>
+                <th>Available in Lab</th>
+                <th>Rest of the items are Using By</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.availability }}</td>
+                    <td>{{ item.usage }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="overlay" id="overlay" onclick="closePopup()"></div>
+
+    <!-- Add Item Popup -->
+    <div class="popup" id="addPopup">
+        <h3>Add Item</h3>
+        <form id="addForm" action="/add_item?username={{ username }}" method="post" onsubmit="return validateAddForm()">
+            <label for="addName">Name:</label><br>
+            <input type="text" id="addName" name="name" onkeyup="getAddSuggestions(event)"><br>
+            <div id="addSuggestions"></div>
+            <label for="addAvailability">Availability:</label><br>
+            <input type="number" id="addAvailability" name="availability"><br><br>
+            <span id="addNameError" class="error"></span><br>
+            <span id="addAvailabilityError" class="error"></span><br>
+            <input type="submit" value="Add Item">
+        </form>
+    </div>
+
+    <!-- Remove Item Popup -->
+    <div class="popup" id="removePopup">
+        <h3>Remove Item</h3>
+        <form id="removeForm" action="/remove_item?username={{ username }}" method="post" onsubmit="return validateRemoveForm()">
+            <label for="removeName">Name:</label><br>
+            <input type="text" id="removeName" name="name" onkeyup="getRemoveSuggestions(event)"><br>
+            <div id="removeSuggestions"></div>
+            <span id="removeNameError" class="error"></span><br>
+            <input type="submit" value="Remove Item">
+        </form>
+    </div>
+
+	<!-- Assign Item Popup -->
+	<div class="popup" id="assignPopup">
+	    <h3>Assign Item</h3>
+	    <form id="assignForm" onsubmit="return assignItem()">
+	        <label for="assignItemName">Item Name:</label><br>
+	        <input type="text" id="assignItemName" name="item_name" onkeyup="getAssignSuggestions(event)"><br>
+	        <div id="assignSuggestions"></div> <!-- Suggestions container -->
+	        <label for="assignQuantity">Quantity:</label><br>
+	        <input type="number" id="assignQuantity" name="quantity"><br><br>
+	        <label for="assignUsername">Assign to User:</label><br>
+	        <input type="text" id="assignUsername" name="username" onkeyup="suggestUsers(event)"><br><br>
+			<div id="userSuggestions"></div> <!-- Suggestions container -->
+	        <span id="assignErrorMessage" class="error"></span><br>
+	        <input type="submit" value="Assign Item">
+	    </form>
+	</div>
+
+	<!-- Return Item Popup -->
+	<div class="popup" id="returnPopup">
+	    <h3>Return Item</h3>
+	    <form id="returnForm" onsubmit="return returnItem()">
+	        <label for="returnItemName">Item Name:</label><br>
+	        <input type="text" id="returnItemName" name="item_name" onkeyup="getReturnSuggestions(event)"><br>
+	        <div id="returnSuggestions"></div> <!-- Suggestions container -->
+	        <label for="returnQuantity">Quantity:</label><br>
+	        <input type="number" id="returnQuantity" name="quantity"><br><br>
+	        <label for="returnFromUser">From User:</label><br> <!-- New field for From User -->
+	        <input type="text" id="returnFromUser" name="from_user" onkeyup="getReturnUserSuggestions(event)"><br><br>
+			<div id="returnUserSuggestions"></div> <!-- Suggestions container -->
+	        <span id="returnErrorMessage" class="error"></span><br>
+	        <input type="submit" value="Return Item">
+	    </form>
+	</div>
+
+
+
+
+    <script>
+        function openPopup(popupId) {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById(popupId).style.display = 'block';
+        }
+
+        function closePopup() {
+            document.getElementById('overlay').style.display = 'none';
+            document.querySelectorAll('.popup').forEach(function(popup) {
+                popup.style.display = 'none';
+            });
+        }
+
+		function validateAddForm() {
+		    var nameInput = document.getElementById('addName');
+		    var availabilityInput = document.getElementById('addAvailability');
+		    var nameError = document.getElementById('addNameError');
+		    var availabilityError = document.getElementById('addAvailabilityError');
+		    var name = nameInput.value.trim();
+		    var availability = availabilityInput.value.trim();
+
+		    // Check if name is empty
+		    if (name === '') {
+		        nameError.innerText = 'Name is required';
+		        return false;
+		    } else {
+		        nameError.innerText = '';
+		    }
+
+		    // Check if availability is empty
+		    if (availability === '') {
+		        availabilityError.innerText = 'Availability is required';
+		        return false;
+		    } else if (isNaN(availability)) {
+		        availabilityError.innerText = 'Availability must be a positive number';
+		        return false;
+		    } else {
+		        availabilityError.innerText = '';
+		    }
+
+		    return true;
+		}
+
+		function validateRemoveForm() {
+		    var nameInput = document.getElementById('removeName');
+		    var nameError = document.getElementById('removeNameError');
+		    var name = nameInput.value.trim();
+		    var items = document.querySelectorAll('tbody tr td:nth-child(2)'); // Get all item names in the table
+
+		    // Check if name is empty
+		    if (name === '') {
+		        nameError.innerText = 'Name is required';
+		        return false;
+		    } else {
+		        nameError.innerText = '';
+		    }
+
+		    // Check if the item name exists in the table
+		    var itemFound = false;
+		    for (var i = 0; i < items.length; i++) {
+		        if (items[i].textContent === name) {
+		            itemFound = true;
+		            break;
+		        }
+		    }
+
+		    // If item not found, display error message
+		    if (!itemFound) {
+		        nameError.innerText = 'No item found';
+		        return false;
+		    } else {
+		        nameError.innerText = '';
+		    }
+
+		    return true;
+		}
+
+        function openAddPopup() {
+            openPopup('addPopup');
+        }
+
+        function openRemovePopup() {
+            openPopup('removePopup');
+        }
+
+        function openAssignPopup() {
+            openPopup('assignPopup');
+        }
+
+		function openReturnPopup() {
+		    openPopup('returnPopup'); // Open the returnPopup
+		}
+
+        function getAddSuggestions(event) {
+		    var input = event.target;
+		    var value = input.value.trim().toLowerCase();
+		    var suggestionsDiv = document.getElementById('addSuggestions');
+		    var items = document.querySelectorAll('tbody tr td:nth-child(2)'); // Get all item names in the table
+		    
+		    // Clear suggestions
+		    suggestionsDiv.innerHTML = '';
+
+		    // If input value is empty, do not show suggestions
+		    if (value === '') {
+		        return;
+		    }
+
+		    // Filter items to match the input value
+		    var suggestions = Array.from(items).filter(function(item) {
+		        return item.textContent.toLowerCase().startsWith(value);
+		    });
+
+		    // Display suggestions
+		    suggestions.forEach(function(suggestion) {
+		        var div = document.createElement('div');
+		        div.textContent = suggestion.textContent;
+		        div.classList.add('suggestion');
+		        div.onclick = function() {
+		            input.value = suggestion.textContent;
+		            suggestionsDiv.innerHTML = '';
+		        };
+		        suggestionsDiv.appendChild(div);
+		    });
+		}
+
+		function getRemoveSuggestions(event) {
+		    var input = event.target;
+		    var value = input.value.trim().toLowerCase();
+		    var suggestionsDiv = document.getElementById('removeSuggestions');
+		    var items = document.querySelectorAll('tbody tr td:nth-child(2)'); // Get all item names in the table
+		    
+		    // Clear suggestions
+		    suggestionsDiv.innerHTML = '';
+
+		    // If input value is empty, do not show suggestions
+		    if (value === '') {
+		        return;
+		    }
+
+		    // Filter items to match the input value
+		    var suggestions = Array.from(items).filter(function(item) {
+		        return item.textContent.toLowerCase().startsWith(value);
+		    });
+
+		    // Display suggestions
+		    suggestions.forEach(function(suggestion) {
+		        var div = document.createElement('div');
+		        div.textContent = suggestion.textContent;
+		        div.classList.add('suggestion');
+		        div.onclick = function() {
+		            input.value = suggestion.textContent;
+		            suggestionsDiv.innerHTML = '';
+		        };
+		        suggestionsDiv.appendChild(div);
+		    });
+		}
+
+
+		function getAssignSuggestions(event) {
+	        var input = event.target;
+	        var value = input.value.trim().toLowerCase();
+	        var suggestionsDiv = document.getElementById('assignSuggestions'); // Suggestions container
+	        var items = document.querySelectorAll('tbody tr td:nth-child(2)'); // Get all item names in the table
+	        
+	        // Clear suggestions
+	        suggestionsDiv.innerHTML = '';
+
+	        // If input value is empty, do not show suggestions
+	        if (value === '') {
+	            return;
+	        }
+
+	        // Filter items to match the input value
+	        var suggestions = Array.from(items).filter(function(item) {
+	            return item.textContent.toLowerCase().startsWith(value);
+	        });
+
+	        // Display suggestions
+	        suggestions.forEach(function(suggestion) {
+	            var div = document.createElement('div');
+	            div.textContent = suggestion.textContent;
+	            div.classList.add('suggestion');
+	            div.onclick = function() {
+	                input.value = suggestion.textContent;
+	                suggestionsDiv.innerHTML = '';
+	            };
+	            suggestionsDiv.appendChild(div);
+	        });
+	    }
+
+
+	    function getReturnSuggestions(event) {
+	        var input = event.target;
+	        var value = input.value.trim().toLowerCase();
+	        var suggestionsDiv = document.getElementById('returnSuggestions'); // Suggestions container
+	        var items = document.querySelectorAll('tbody tr td:nth-child(2)'); // Get all item names in the table
+	        
+	        // Clear suggestions
+	        suggestionsDiv.innerHTML = '';
+
+	        // If input value is empty, do not show suggestions
+	        if (value === '') {
+	            return;
+	        }
+
+	        // Filter items to match the input value
+	        var suggestions = Array.from(items).filter(function(item) {
+	            return item.textContent.toLowerCase().startsWith(value);
+	        });
+
+	        // Display suggestions
+	        suggestions.forEach(function(suggestion) {
+	            var div = document.createElement('div');
+	            div.textContent = suggestion.textContent;
+	            div.classList.add('suggestion');
+	            div.onclick = function() {
+	                input.value = suggestion.textContent;
+	                suggestionsDiv.innerHTML = '';
+	            };
+	            suggestionsDiv.appendChild(div);
+	        });
+	    }
+
+	    function suggestUsers(event) {
+	        const input = event.target.value.toLowerCase();
+	        const suggestionsContainer = document.getElementById('userSuggestions');
+	        suggestionsContainer.innerHTML = '';
+
+	        if (input.length > 0) {
+	            const filteredUsers = {{ user_names | tojson }}.filter(user => user.toLowerCase().startsWith(input));
+	            filteredUsers.forEach(user => {
+	                const suggestion = document.createElement('div');
+	                suggestion.textContent = user;
+	                suggestion.classList.add('suggestion');
+	                suggestion.addEventListener('click', () => {
+	                    document.getElementById('assignUsername').value = user;
+	                    suggestionsContainer.innerHTML = '';
+	                });
+	                suggestionsContainer.appendChild(suggestion);
+	            });
+	            suggestionsContainer.style.display = 'block'; // Ensure suggestions are visible
+	        } else {
+	            suggestionsContainer.style.display = 'none'; // Hide suggestions if input is empty
+	        }
+	    }
+
+	    function getReturnUserSuggestions(event) {
+	        var input = event.target;
+	        var value = input.value.trim().toLowerCase();
+	        var suggestionsDiv = document.getElementById('returnUserSuggestions');
+	        suggestionsDiv.innerHTML = '';
+
+	        if (value.length > 0) {
+	            const filteredUsers = {{ user_names | tojson }}.filter(user => user.toLowerCase().startsWith(value));
+	            filteredUsers.forEach(user => {
+	                const suggestion = document.createElement('div');
+	                suggestion.textContent = user;
+	                suggestion.classList.add('suggestion');
+	                suggestion.addEventListener('click', () => {
+	                    document.getElementById('returnFromUser').value = user;
+	                    suggestionsDiv.innerHTML = '';
+	                });
+	                suggestionsDiv.appendChild(suggestion);
+	            });
+	            suggestionsDiv.style.display = 'block'; // Ensure suggestions are visible
+	        } else {
+	            suggestionsDiv.style.display = 'none'; // Hide suggestions if input is empty
+	        }
+	    }
+
+
+
+		function validateAssignForm() {
+		    var usernameInput = document.getElementById('assignUsername');
+		    var usernameError = document.getElementById('assignUsernameError');
+		    var username = usernameInput.value.trim();
+
+		    // Check if username is empty
+		    if (username === '') {
+		        usernameError.innerText = 'Username is required';
+		        return false;
+		    } else {
+		        usernameError.innerText = '';
+		    }
+
+		    return true;
+		}
+
+		function assignItem() {
+		    var itemName = document.getElementById('assignItemName').value.trim();
+		    var quantity = document.getElementById('assignQuantity').value.trim();
+		    var username = document.getElementById('assignUsername').value.trim();
+
+		    // Validation: Check if any field is empty
+		    if (itemName === '' || quantity === '' || username === '') {
+		        document.getElementById('assignErrorMessage').innerText = 'All fields are required';
+		        return false;
+		    }
+
+		    // Check if the item exists in the inventory table
+		    var itemExists = false;
+		    var items = document.querySelectorAll('tbody tr td:nth-child(2)'); // Get all item names in the table
+		    items.forEach(function(item) {
+		        if (item.textContent === itemName) {
+		            itemExists = true;
+		        }
+		    });
+
+		    if (!itemExists) {
+		        document.getElementById('assignErrorMessage').innerText = 'Item does not exist in inventory';
+		        return false;
+		    }
+
+		    // Make AJAX request to assign the item
+		    var xhr = new XMLHttpRequest();
+		    xhr.open('POST', '/assign_item?username={{ username }}', true);
+		    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+		    xhr.onreadystatechange = function() {
+		        if (xhr.readyState === XMLHttpRequest.DONE) {
+		            if (xhr.status === 200) {
+		                // If assignment is successful, close the popup and refresh the page
+		                closePopup();
+		                location.reload();
+		            } else {
+		                // If there's an error, display error message
+		                document.getElementById('assignErrorMessage').innerText = 'Error assigning item';
+		            }
+		        }
+		    };
+		    xhr.send('item_name=' + itemName + '&quantity=' + quantity + '&username=' + username);
+
+		    return false; // Prevent form submission
+		}
+
+		function returnItem() {
+		    var itemName = document.getElementById('returnItemName').value.trim();
+		    var quantity = document.getElementById('returnQuantity').value.trim();
+		    var fromUser = document.getElementById('returnFromUser').value.trim();
+
+		    // Get all rows in the table body
+   			var rows = document.querySelectorAll('tbody tr');
+
+		    // Validation: Check if any field is empty
+		    if (itemName === '' || quantity === '' || fromUser === '') {
+		        document.getElementById('returnErrorMessage').innerText = 'All fields are required';
+		        return false;
+		    }
+
+
+		    // Check if the item exists in the inventory table
+		    var itemExists = false;
+		    var items = document.querySelectorAll('tbody tr td:nth-child(2)'); // Get all item names in the table
+		    items.forEach(function(item) {
+		        if (item.textContent === itemName) {
+		            itemExists = true;
+		        }
+		    });
+
+		    if (!itemExists) {
+		        document.getElementById('returnErrorMessage').innerText = 'Item does not exist in inventory';
+		        return false;
+		    }
+
+		    // Search for the item name and check if the 'fromUser' exists in that row
+		    var userFound = false;
+		    for (var i = 0; i < rows.length; i++) {
+		        var cells = rows[i].querySelectorAll('td');
+		        if (cells.length >= 4 && cells[1].textContent.trim() === itemName) {
+		            var users = cells[3].textContent.split(', ');
+		            for (var j = 0; j < users.length; j++) {
+		                var user = users[j].split(' (')[0]; // Extracting the user name without quantity
+           				var quant = parseInt(users[j].split(' (')[1].split(')')[0]); // Extracting the quantity and converting to number
+		                if (user === fromUser) {
+			                	if (quant < parseInt(quantity)) {
+				                	document.getElementById('returnErrorMessage').innerText = 'Specified user does not have that much items assigned';
+				        			return false;
+				                }
+		                    userFound = true;
+		                    break;
+		                }
+		            }
+		            if (userFound) {
+		                break;
+		            }
+		        }
+		    }
+
+		    if (!userFound) {
+		        document.getElementById('returnErrorMessage').innerText = 'Specified user does not have any items assigned';
+		        return false;
+		    }
+
+		    // Make AJAX request to return the item
+		    var xhr = new XMLHttpRequest();
+		    xhr.open('POST', '/return_item', true);
+		    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+		    xhr.onreadystatechange = function() {
+		        if (xhr.readyState === XMLHttpRequest.DONE) {
+		            if (xhr.status === 200) {
+		                // If return is successful, reload the page to update inventory
+		                location.reload();
+		            } else {
+		                // If there's an error, display error message
+		                document.getElementById('returnErrorMessage').innerText = 'Error returning item';
+		            }
+		        }
+		    };
+		    xhr.send('item_name=' + itemName + '&quantity=' + quantity + '&from_user=' + fromUser);
+
+		    return false; // Prevent form submission
+		}
+
+
+		function fetchNotifications() {
+		    fetch('/fetch_notifications')
+		    .then(response => response.json())
+		    .then(data => {
+		        const notificationDropdown = document.getElementById("notificationDropdown");
+		        notificationDropdown.innerHTML = '';
+		        data.forEach((notification, index) => {
+		            const notificationItem = document.createElement('div');
+		            notificationItem.classList.add('notification-item');
+
+		            // Determine the color based on the notification message content
+		            const color = notification.includes('requested to borrow') ? 'red' : notification.includes('requested to return') ? 'green' : 'black';
+
+		            // Apply the determined color to the notification message
+		            const notificationText = document.createElement('span');
+		            notificationText.textContent = notification;
+		            notificationText.style.color = color; // Set the color
+
+		            const closeButton = document.createElement('button');
+		            closeButton.textContent = '❌';
+		            closeButton.classList.add('close-button');
+		            const tickButton = document.createElement('button');
+		            tickButton.textContent = '✅';
+		            tickButton.classList.add('tick-button');
+		            closeButton.addEventListener('click', function() {
+		                removeNotification(index + 1);
+		            });
+		            tickButton.addEventListener('click', function() {
+		                performAdditionalTask(index + 1);
+		            });
+		            notificationItem.appendChild(notificationText);
+		            const buttonsContainer = document.createElement('div');
+		            buttonsContainer.classList.add('notification-buttons');
+		            buttonsContainer.appendChild(tickButton);
+		            buttonsContainer.appendChild(closeButton);
+		            notificationItem.appendChild(buttonsContainer);
+		            notificationDropdown.appendChild(notificationItem);
+		        });
+		    })
+		    .catch(error => console.error('Error fetching notifications:', error));
+		}
+
+        function performAdditionalTask(rowNumber) {
+            fetch('/approve_notification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ row_number: rowNumber })
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    console.error('Failed to approve notification');
+                }
+            })
+            .catch(error => console.error('Error approving notification:', error));
+        }
+
+        function removeNotification(rowNumber) {
+            fetch('/remove_notification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ row_number: rowNumber })
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    console.error('Failed to remove notification');
+                }
+            })
+            .catch(error => console.error('Error removing notification:', error));
+        }
+
+        window.onload = fetchNotifications;
+
+        function toggleDropdown() {
+            var dropdown = document.getElementById("notificationDropdown");
+            if (dropdown.style.display === "none") {
+                dropdown.style.display = "block";
+            } else {
+                dropdown.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>
