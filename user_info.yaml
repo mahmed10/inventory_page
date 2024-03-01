@@ -1,0 +1,10 @@
+user:
+  userid1: username1
+  userid2: username2
+  userid3: username3
+  userid4: username4
+
+
+admin:
+  userid1: password1
+  userid2: password2
